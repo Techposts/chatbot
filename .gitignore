@@ -1,2 +1,7 @@
 .env
 .streamlit/secrets.toml
+# Ignore Python virtual environments
+venv/
+env/
+**/venv/
+**/env/
