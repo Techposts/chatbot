@@ -19,55 +19,55 @@ class WordPressFetcher:
             self.fetch_pages()
             print("WordPress content fetch complete")
     
-        def fetch_posts(self, per_page=100):
-        """Fetch all posts from the WordPress site"""
-        page = 1
-        all_posts = []
+    def fetch_posts(self, per_page=100):
+    """Fetch all posts from the WordPress site"""
+    page = 1
+    all_posts = []
+
+    # Set proper headers to avoid 406 error
+    headers = {
+        "User-Agent": "Anaptyss Chatbot/1.0",
+        "Accept": "application/json"
+    }
+
+    while True:
+        url = f"{self.api_url}/posts?per_page={per_page}&page={page}"
+        print(f"Fetching from URL: {url}")
     
-        # Set proper headers to avoid 406 error
-        headers = {
-            "User-Agent": "Anaptyss Chatbot/1.0",
-            "Accept": "application/json"
-        }
-    
-        while True:
-            url = f"{self.api_url}/posts?per_page={per_page}&page={page}"
-            print(f"Fetching from URL: {url}")
+        try:
+            response = requests.get(url, headers=headers)
+            print(f"Response status: {response.status_code}")
         
-            try:
-                response = requests.get(url, headers=headers)
-                print(f"Response status: {response.status_code}")
-            
-                if response.status_code == 200:
-                    posts = response.json()
-                    if not posts:
-                        break
-                
-                    all_posts.extend(posts)
-                    page += 1
-                else:
-                    print(f"Error fetching posts: {response.status_code}")
-                    print(f"Response content: {response.text[:500]}")
+            if response.status_code == 200:
+                posts = response.json()
+                if not posts:
                     break
-            except Exception as e:
-                print(f"Exception during fetch: {str(e)}")
+            
+                all_posts.extend(posts)
+                page += 1
+            else:
+                print(f"Error fetching posts: {response.status_code}")
+                print(f"Response content: {response.text[:500]}")
                 break
+        except Exception as e:
+            print(f"Exception during fetch: {str(e)}")
+            break
+
+    # Save posts to files
+    for post in all_posts:
+        content = BeautifulSoup(post['content']['rendered'], 'html.parser').get_text()
+        title = post['title']['rendered']
+        slug = post['slug']
+        date = post['date']
     
-        # Save posts to files
-        for post in all_posts:
-            content = BeautifulSoup(post['content']['rendered'], 'html.parser').get_text()
-            title = post['title']['rendered']
-            slug = post['slug']
-            date = post['date']
-        
-            with open(f"{self.cache_dir}/post_{slug}.md", 'w', encoding='utf-8') as f:
-                f.write(f"# {title}\n\n")
-                f.write(f"Date: {date}\n\n")
-                f.write(content)
+        with open(f"{self.cache_dir}/post_{slug}.md", 'w', encoding='utf-8') as f:
+            f.write(f"# {title}\n\n")
+            f.write(f"Date: {date}\n\n")
+            f.write(content)
+
+    print(f"Fetched {len(all_posts)} posts")
     
-        print(f"Fetched {len(all_posts)} posts")
-        
-        print(f"Fetched {len(all_posts)} posts")
+    print(f"Fetched {len(all_posts)} posts")
     
     def fetch_pages(self, per_page=100):
         """Fetch all pages from the WordPress site"""
