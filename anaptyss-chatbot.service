@@ -1,0 +1,16 @@
+[Unit]
+Description=Anaptyss Chatbot
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/var/www/anaptyss-chatbot
+ExecStart=/var/www/anaptyss-chatbot/venv/bin/streamlit run app.py --server.port=8501
+Restart=always
+RestartSec=5
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=anaptyss-chatbot
+
+[Install]
+WantedBy=multi-user.target
