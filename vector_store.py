@@ -11,11 +11,37 @@ os.makedirs("vector_db", exist_ok=True)
 
 class VectorStore:
     def __init__(self):
-        self.embeddings = OpenAIEmbeddings(openai_api_key=st.secrets["OPENAI_API_KEY"])
-        self.vector_store = None
-        self.init_vector_store()
+        try:
+            openai_api_key = st.secrets.get("OPENAI_API_KEY")
+            if not openai_api_key and "api_keys" in st.secrets:
+                # Try to get from nested section if present
+                openai_api_key = st.secrets["api_keys"].get("OPENAI_API_KEY")
+                
+            if not openai_api_key:
+                # Try environment variable as fallback
+                openai_api_key = os.environ.get("OPENAI_API_KEY")
+                
+            if not openai_api_key:
+                print("WARNING: No OpenAI API key found in secrets or environment variables.")
+                print("Vector store functionality will be limited.")
+                self.embeddings = None
+                self.vector_store = None
+                return
+                
+            self.embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
+            self.vector_store = None
+            self.init_vector_store()
+        except Exception as e:
+            print(f"Error initializing vector store: {e}")
+            self.embeddings = None
+            self.vector_store = None
     
     def init_vector_store(self):
+        # Check if embeddings are available
+        if not self.embeddings:
+            print("Cannot initialize vector store: No embeddings available")
+            return
+            
         # Check if vector store exists, if not create it
         try:
             self.vector_store = Chroma(
@@ -57,6 +83,7 @@ class VectorStore:
     def similar_docs(self, query, k=3):
         """Find most similar documents to the query"""
         if not self.vector_store:
+            print("Vector store not available. Cannot perform similarity search.")
             return []
         
         docs = self.vector_store.similarity_search(query, k=k)
